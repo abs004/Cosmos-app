@@ -1,7 +1,11 @@
-import "./App.css";
+import { useState } from "react";
 import Canvas from "./components/Canvas";
+import ChatPanel from "./components/ChatPanel";
 
 export default function App() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [latestMessage, setLatestMessage] = useState("Move closer to chat");
+
   return (
     <div
       style={{
@@ -16,7 +20,15 @@ export default function App() {
         overflow: "hidden",
       }}
     >
-      <Canvas />
+      <Canvas
+        setIsConnected={setIsConnected}
+        latestMessage={latestMessage}
+      />
+
+      <ChatPanel
+        isConnected={isConnected}
+        setLatestMessage={setLatestMessage}
+      />
     </div>
   );
 }

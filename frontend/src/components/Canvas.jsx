@@ -1,117 +1,190 @@
 import { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
 
-export default function Canvas() {
-    const containerRef = useRef(null);
+export default function Canvas({ setIsConnected, latestMessage }) {
+  const containerRef = useRef(null);
+  const bubbleTextRef = useRef(null);
 
-    useEffect(() => {
-        const setupCanvas = async () => {
-            const app = new PIXI.Application();
+  useEffect(() => {
+    const setupCanvas = async () => {
+      const app = new PIXI.Application();
 
-            await app.init({
-                width: 800,
-                height: 600,
-                background: "#1a1622",
-            });
+      await app.init({
+        width: 800,
+        height: 600,
+        background: "#1a1622",
+      });
 
-            const player = new PIXI.Graphics();
-            player.circle(0, 0, 20);
-            player.fill(0x3b82f6);
-            player.x = 400;
-            player.y = 300;
+      const player = new PIXI.Graphics();
+      player.circle(0, 0, 20);
+      player.fill(0x3b82f6);
+      player.x = 400;
+      player.y = 300;
 
-            const radiusZone = new PIXI.Graphics();
+      const messageBubble = new PIXI.Graphics();
+      messageBubble.roundRect(0, 0, 160, 40, 10);
+      messageBubble.fill(0xffffff);
+      messageBubble.x = player.x - 80;
+      messageBubble.y = player.y - 70;
 
-            radiusZone.circle(0, 0, 80);
-            radiusZone.stroke({
-                color: 0x3b82f6,
-                width: 2,
-                alpha: 0.4,
-            });
+      app.stage.addChild(messageBubble);
 
-            radiusZone.x = player.x;
-            radiusZone.y = player.y;
+      const bubbleText = new PIXI.Text({
+        text: latestMessage,
+        style: {
+          fill: "black",
+          fontSize: 14,
+        },
+      });
 
-            app.stage.addChild(radiusZone);
-            app.stage.addChild(player);
+      bubbleText.x = messageBubble.x + 15;
+      bubbleText.y = messageBubble.y + 10;
 
-            const otherUser = new PIXI.Graphics();
-            otherUser.circle(0, 0, 20);
-            otherUser.fill(0x22c55e);
-            otherUser.x = 80;
-            otherUser.y = 80;
-            app.stage.addChild(otherUser);
+      bubbleTextRef.current = bubbleText;
 
-            const statusText = new PIXI.Text({
-                text: "DISCONNECTED",
-                style: {
-                    fill: "white",
-                    fontSize: 16,
-                },
-            });
+      app.stage.addChild(bubbleText);
 
-            statusText.x = 10;
-            statusText.y = 10;
-            app.stage.addChild(statusText);
+      const radiusZone = new PIXI.Graphics();
+      radiusZone.circle(0, 0, 80);
+      radiusZone.stroke({
+        color: 0x3b82f6,
+        width: 2,
+        alpha: 0.4,
+      });
 
-            let isConnected = false;
+      radiusZone.x = player.x;
+      radiusZone.y = player.y;
 
-            const checkProximity = () => {
-                const dx = player.x - otherUser.x;
-                const dy = player.y - otherUser.y;
+      app.stage.addChild(radiusZone);
+      app.stage.addChild(player);
 
-                const distance = Math.sqrt(dx * dx + dy * dy);
+      const otherUser = new PIXI.Graphics();
+      otherUser.circle(0, 0, 20);
+      otherUser.fill(0x22c55e);
+      otherUser.x = 80;
+      otherUser.y = 80;
+      app.stage.addChild(otherUser);
 
-                if (distance < 80 && !isConnected) {
-                    isConnected = true;
-                    statusText.text = "CONNECTED";
-                }
+      const statusText = new PIXI.Text({
+        text: "DISCONNECTED",
+        style: {
+          fill: "white",
+          fontSize: 16,
+        },
+      });
 
-                if (distance >= 80 && isConnected) {
-                    isConnected = false;
-                    statusText.text = "DISCONNECTED";
-                }
-            };
+      statusText.x = 10;
+      statusText.y = 10;
 
-            window.addEventListener("keydown", (event) => {
-                if ((event.key === "w" || event.key === "ArrowUp") && player.y > 20) {
-                    player.y -= 10;
-                }
+      app.stage.addChild(statusText);
 
-                if ((event.key === "s" || event.key === "ArrowDown") && player.y < 580) {
-                    player.y += 10;
-                }
+      let isConnected = false;
 
-                if ((event.key === "a" || event.key === "ArrowLeft") && player.x > 20) {
-                    player.x -= 10;
-                }
+      const checkProximity = () => {
+        const dx = player.x - otherUser.x;
+        const dy = player.y - otherUser.y;
 
-                if ((event.key === "d" || event.key === "ArrowRight") && player.x < 780) {
-                    player.x += 10;
-                }
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-                radiusZone.x = player.x;
-                radiusZone.y = player.y;
+        if (distance < 80 && !isConnected) {
+          isConnected = true;
+          setIsConnected(true);
+          statusText.text = "CONNECTED";
+        }
 
-                checkProximity();
-            });
+        if (distance >= 80 && isConnected) {
+          isConnected = false;
+          setIsConnected(false);
+          statusText.text = "DISCONNECTED";
+        }
+      };
 
-            containerRef.current.innerHTML = "";
-            containerRef.current.appendChild(app.canvas);
-        };
+      const keys = {};
 
-        setupCanvas();
-    }, []);
+      const onKeyDown = (event) => {
+        keys[event.key] = true;
+      };
 
-    return (
-        <div
-            ref={containerRef}
-            style={{
-                width: "800px",
-                height: "600px",
-                border: "2px solid white",
-                boxSizing: "border-box",
-            }}
-        ></div>
-    );
+      const onKeyUp = (event) => {
+        keys[event.key] = false;
+      };
+
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+
+      app.ticker.add(() => {
+        const speed = 5;
+        let moved = false;
+
+        if ((keys["w"] || keys["ArrowUp"]) && player.y > 20) {
+          player.y -= speed;
+          moved = true;
+        }
+
+        if ((keys["s"] || keys["ArrowDown"]) && player.y < 580) {
+          player.y += speed;
+          moved = true;
+        }
+
+        if ((keys["a"] || keys["ArrowLeft"]) && player.x > 20) {
+          player.x -= speed;
+          moved = true;
+        }
+
+        if ((keys["d"] || keys["ArrowRight"]) && player.x < 780) {
+          player.x += speed;
+          moved = true;
+        }
+
+        if (moved) {
+          radiusZone.x = player.x;
+          radiusZone.y = player.y;
+          checkProximity();
+        }
+
+        messageBubble.x = player.x - 80;
+        messageBubble.y = player.y - 70;
+
+        bubbleText.x = messageBubble.x + 15;
+        bubbleText.y = messageBubble.y + 10;
+      });
+
+      containerRef.current.innerHTML = "";
+      containerRef.current.appendChild(app.canvas);
+
+      return () => {
+        window.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keyup", onKeyUp);
+        app.destroy(true, {
+          children: true,
+          texture: true,
+          baseTexture: true,
+        });
+      };
+    };
+
+    const cleanup = setupCanvas();
+
+    return () => {
+      cleanup.then((destroy) => destroy && destroy());
+    };
+  }, [setIsConnected]);
+
+  useEffect(() => {
+    if (bubbleTextRef.current) {
+      bubbleTextRef.current.text = latestMessage;
+    }
+  }, [latestMessage]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: "800px",
+        height: "600px",
+        border: "2px solid white",
+        boxSizing: "border-box",
+      }}
+    ></div>
+  );
 }
