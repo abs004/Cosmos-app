@@ -9,16 +9,16 @@ export default function Canvas() {
             const app = new PIXI.Application();
 
             await app.init({
-                width: 300,
-                height: 300,
+                width: 800,
+                height: 600,
                 background: "#1a1622",
             });
 
             const player = new PIXI.Graphics();
             player.circle(0, 0, 20);
             player.fill(0x3b82f6);
-            player.x = 150;
-            player.y = 150;
+            player.x = 400;
+            player.y = 300;
 
             const radiusZone = new PIXI.Graphics();
 
@@ -78,7 +78,7 @@ export default function Canvas() {
                     player.y -= 10;
                 }
 
-                if ((event.key === "s" || event.key === "ArrowDown") && player.y < 280) {
+                if ((event.key === "s" || event.key === "ArrowDown") && player.y < 580) {
                     player.y += 10;
                 }
 
@@ -86,7 +86,7 @@ export default function Canvas() {
                     player.x -= 10;
                 }
 
-                if ((event.key === "d" || event.key === "ArrowRight") && player.x < 280) {
+                if ((event.key === "d" || event.key === "ArrowRight") && player.x < 780) {
                     player.x += 10;
                 }
 
@@ -107,9 +107,10 @@ export default function Canvas() {
         <div
             ref={containerRef}
             style={{
-                width: "300px",
-                height: "300px",
+                width: "800px",
+                height: "600px",
                 border: "2px solid white",
+                boxSizing: "border-box",
             }}
         ></div>
     );
