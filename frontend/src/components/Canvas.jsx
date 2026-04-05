@@ -15,25 +15,47 @@ export default function Canvas() {
             });
 
             const player = new PIXI.Graphics();
-
             player.circle(0, 0, 20);
             player.fill(0x3b82f6);
-
             player.x = 150;
             player.y = 150;
 
-            app.stage.addChild(player);
-            const otherUser = new PIXI.Graphics();
+            const radiusZone = new PIXI.Graphics();
 
+            radiusZone.circle(0, 0, 80);
+            radiusZone.stroke({
+                color: 0x3b82f6,
+                width: 2,
+                alpha: 0.4,
+            });
+
+            radiusZone.x = player.x;
+            radiusZone.y = player.y;
+
+            app.stage.addChild(radiusZone);
+            app.stage.addChild(player);
+
+            const otherUser = new PIXI.Graphics();
             otherUser.circle(0, 0, 20);
             otherUser.fill(0x22c55e);
-
             otherUser.x = 80;
             otherUser.y = 80;
-
             app.stage.addChild(otherUser);
 
+            const statusText = new PIXI.Text({
+                text: "DISCONNECTED",
+                style: {
+                    fill: "white",
+                    fontSize: 16,
+                },
+            });
+
+            statusText.x = 10;
+            statusText.y = 10;
+            app.stage.addChild(statusText);
+
             let isConnected = false;
+
             const checkProximity = () => {
                 const dx = player.x - otherUser.x;
                 const dy = player.y - otherUser.y;
@@ -42,12 +64,12 @@ export default function Canvas() {
 
                 if (distance < 80 && !isConnected) {
                     isConnected = true;
-                    console.log("connected");
+                    statusText.text = "CONNECTED";
                 }
 
                 if (distance >= 80 && isConnected) {
                     isConnected = false;
-                    console.log("disconnected");
+                    statusText.text = "DISCONNECTED";
                 }
             };
 
@@ -67,6 +89,9 @@ export default function Canvas() {
                 if ((event.key === "d" || event.key === "ArrowRight") && player.x < 280) {
                     player.x += 10;
                 }
+
+                radiusZone.x = player.x;
+                radiusZone.y = player.y;
 
                 checkProximity();
             });
