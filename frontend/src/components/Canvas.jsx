@@ -130,22 +130,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       playerObj.nameText.text = position.name || "User";
       playerObj.nameText.x = position.x;
       playerObj.nameText.y = position.y + 25;
-
-      // In-engine bubble logic (synced with movement if any)
-      if (position.message) {
-        playerObj.bubble.visible = true;
-        playerObj.bubbleText.visible = true;
-        playerObj.bubble.x = position.x - 70;
-        playerObj.bubble.y = position.y - 60;
-
-        const displayMsg = position.message.length > 20
-          ? position.message.substring(0, 17) + "..."
-          : position.message;
-
-        playerObj.bubbleText.text = displayMsg;
-        playerObj.bubbleText.x = position.x - (playerObj.bubbleText.width / 2); // Center text
-        playerObj.bubbleText.y = position.y - 50;
-      }
     });
   };
 
@@ -294,7 +278,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         // Connection intent
         if ((keys["e"] || keys["E"]) && closestPlayerId && !isConnectedInternal) {
           isConnectedInternal = true;
-          setIsConnected(true);
+          setIsConnected(closestPlayerId);
           statusText.text = "CONNECTED";
           promptText.visible = false; // Hide prompt once connected
         }
@@ -325,8 +309,13 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       playerObj.bubbleText.visible = true;
       playerObj.bubble.visible = true;
 
+      // Update bubble position
+      playerObj.bubble.x = playerObj.sprite.x - 70;
+      playerObj.bubble.y = playerObj.sprite.y - 60;
+
       // Update bubble text position to center within the bubble
       playerObj.bubbleText.x = playerObj.sprite.x - (playerObj.bubbleText.width / 2);
+      playerObj.bubbleText.y = playerObj.sprite.y - 50;
 
       const timeout = setTimeout(() => {
         playerObj.bubbleText.visible = false;

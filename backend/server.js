@@ -43,74 +43,6 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("playerMove", async (position) => {
-        if (players[socket.id]) {
-            Object.assign(players[socket.id], position);
-            io.emit("playersUpdate", players);
-
-            // Optional: Persist position to DB periodically or on every move
-            try {
-                await User.updateOne(
-                    { socketId: socket.id },
-                    { x: position.x, y: position.y, lastSeen: new Date() }
-                );
-            } catch (err) {
-                console.error("Error updating position in MongoDB:", err);
-            }
-        }
-    });
-
-    socket.on("sendMessage", (message) => {
-        if (players[socket.id]) {
-            players[socket.id].message = message;
-            io.emit("playersUpdate", players);
-
-            // Clear existing timeout if any
-            if (messageTimeouts[socket.id]) {
-                clearTimeout(messageTimeouts[socket.id]);
-            }
-
-            // Clear message after 5 seconds
-            messageTimeouts[socket.id] = setTimeout(() => {
-                if (players[socket.id]) {
-                    delete players[socket.id].message;
-                    io.emit("playersUpdate", players);
-                }
-                delete messageTimeouts[socket.id];
-            }, 5000);
-        }
-
-        io.emit("receiveMessage", {
-            senderId: socket.id,
-            text: message,
-        });
-    });
-
-    socket.on("disconnect", async () => {
-        const wasJoined = players[socket.id];
-        delete players[socket.id];
-
-        try {
-            // Update lastSeen and clear socketId
-            await User.updateOne(
-                { socketId: socket.id },
-                { socketId: null, lastSeen: new Date() }
-            );
-        } catch (err) {
-            console.error("Error updating disconnect in MongoDB:", err);
-        }
-
-        if (messageTimeouts[socket.id]) {
-            clearTimeout(messageTimeouts[socket.id]);
-            delete messageTimeouts[socket.id];
-        }
-
-        if (wasJoined) {
-            io.emit("playersUpdate", players);
-        }
-        console.log("User disconnected:", socket.id);
-    });
-
     socket.on("joinUser", async (data) => {
         const { name, avatarSeed } = data;
         const x = Math.floor(Math.random() * 700) + 50;
@@ -138,7 +70,58 @@ io.on("connection", (socket) => {
         io.emit("playersUpdate", players);
     });
 
+    socket.on("playerMove", async (position) => {
+        if (players[socket.id]) {
+            Object.assign(players[socket.id], position);
+            io.emit("playersUpdate", players);
 
+            try {
+                await User.updateOne(
+                    { socketId: socket.id },
+                    { x: position.x, y: position.y, lastSeen: new Date() }
+                );
+            } catch (err) {
+                console.error("Error updating position in MongoDB:", err);
+            }
+        }
+    });
+
+    socket.on("sendMessage", (data) => {
+        const { text, targetId } = data;
+        const msgPayload = { senderId: socket.id, targetId, text };
+
+        // Send to partner
+        if (targetId) {
+            io.to(targetId).emit("receiveMessage", msgPayload);
+        }
+
+        // Send back to self
+        socket.emit("receiveMessage", msgPayload);
+    });
+
+    socket.on("disconnect", async () => {
+        const wasJoined = players[socket.id];
+        delete players[socket.id];
+
+        try {
+            await User.updateOne(
+                { socketId: socket.id },
+                { socketId: null, lastSeen: new Date() }
+            );
+        } catch (err) {
+            console.error("Error updating disconnect in MongoDB:", err);
+        }
+
+        if (messageTimeouts[socket.id]) {
+            clearTimeout(messageTimeouts[socket.id]);
+            delete messageTimeouts[socket.id];
+        }
+
+        if (wasJoined) {
+            io.emit("playersUpdate", players);
+        }
+        console.log("User disconnected:", socket.id);
+    });
 });
 
 

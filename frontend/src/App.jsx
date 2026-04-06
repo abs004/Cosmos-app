@@ -12,7 +12,7 @@ export default function App() {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [isConnected, setIsConnected] = useState(false);
+  const [partnerId, setPartnerId] = useState(null);
   const [latestMessage, setLatestMessage] = useState(null);
   const [messages, setMessages] = useState([]);
   const [players, setPlayers] = useState({});
@@ -78,7 +78,7 @@ export default function App() {
         </div>
 
         <Canvas
-          setIsConnected={setIsConnected}
+          setIsConnected={setPartnerId}
           latestMessage={latestMessage}
           username={username}
           players={players}
@@ -95,10 +95,11 @@ export default function App() {
           }}
         >
           <ChatPanel
-            isConnected={isConnected}
-            setIsConnected={setIsConnected}
+            partnerId={partnerId}
+            setPartnerId={setPartnerId}
             messages={messages}
             setMessages={setMessages}
+            players={players}
           />
         </div>
       </div>
