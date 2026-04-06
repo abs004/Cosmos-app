@@ -128,6 +128,12 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       playerObj.nameText.text = position.name || "User";
       playerObj.nameText.x = position.x;
       playerObj.nameText.y = position.y + 25;
+
+      // Update bubble position if visible
+      playerObj.bubble.x = position.x - 70;
+      playerObj.bubble.y = position.y - 60;
+      playerObj.bubbleText.x = position.x - (playerObj.bubbleText.width / 2);
+      playerObj.bubbleText.y = position.y - 50;
     });
   };
 
@@ -185,14 +191,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
 
-      const statusText = new PIXI.Text({
-        text: "",
-        style: { fill: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "sans-serif" },
-      });
-      statusText.x = 10;
-      statusText.y = 10;
-      app.stage.addChild(statusText);
-
       const promptText = new PIXI.Text({
         text: "",
         style: { fill: "#fbbf24", fontSize: 18, fontWeight: "bold", stroke: "black", strokeThickness: 2 },
@@ -234,7 +232,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           if (isConnectedInternal) {
             isConnectedInternal = false;
             setIsConnected(false);
-            statusText.text = "DISCONNECTED";
           }
         }
       };
@@ -269,6 +266,13 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         if (moved) {
           local.nameText.x = local.sprite.x;
           local.nameText.y = local.sprite.y + 25;
+
+          // Update bubble position
+          local.bubble.x = local.sprite.x - 70;
+          local.bubble.y = local.sprite.y - 60;
+          local.bubbleText.x = local.sprite.x - (local.bubbleText.width / 2);
+          local.bubbleText.y = local.sprite.y - 50;
+
           checkProximity({ x: local.sprite.x, y: local.sprite.y });
           socket.emit("playerMove", { x: local.sprite.x, y: local.sprite.y });
         }
@@ -277,7 +281,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         if ((keys["e"] || keys["E"]) && closestPlayerId && !isConnectedInternal) {
           isConnectedInternal = true;
           setIsConnected(closestPlayerId);
-          statusText.text = "CONNECTED";
           promptText.visible = false; // Hide prompt once connected
         }
       });
