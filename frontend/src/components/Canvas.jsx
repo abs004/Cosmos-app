@@ -1,9 +1,52 @@
 import { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
+import socket from "../services/socket";
 
 export default function Canvas({ setIsConnected, latestMessage }) {
   const containerRef = useRef(null);
   const bubbleTextRef = useRef(null);
+  const otherPlayersRef = useRef({});
+  const appRef = useRef(null);
+
+  useEffect(() => {
+    const handlePlayersUpdate = (players) => {
+      const app = appRef.current;
+      if (!app) return;
+
+      Object.keys(otherPlayersRef.current).forEach((id) => {
+        if (!players[id]) {
+          app.stage.removeChild(otherPlayersRef.current[id]);
+          delete otherPlayersRef.current[id];
+        }
+      });
+
+      Object.entries(players).forEach(([id, position]) => {
+        if (id === socket.id) return;
+
+        if (!otherPlayersRef.current[id]) {
+          const otherPlayer = new PIXI.Graphics();
+          otherPlayer.circle(0, 0, 20);
+          otherPlayer.fill(0x22c55e);
+
+          otherPlayersRef.current[id] = otherPlayer;
+          app.stage.addChild(otherPlayer);
+        }
+
+        otherPlayersRef.current[id].x = position.x;
+        otherPlayersRef.current[id].y = position.y;
+      });
+    };
+
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
+
+    socket.on("playersUpdate", handlePlayersUpdate);
+
+    return () => {
+      socket.off("playersUpdate", handlePlayersUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const setupCanvas = async () => {
@@ -14,6 +57,8 @@ export default function Canvas({ setIsConnected, latestMessage }) {
         height: 600,
         background: "#1a1622",
       });
+
+      appRef.current = app;
 
       const player = new PIXI.Graphics();
       player.circle(0, 0, 20);
@@ -58,12 +103,7 @@ export default function Canvas({ setIsConnected, latestMessage }) {
       app.stage.addChild(radiusZone);
       app.stage.addChild(player);
 
-      const otherUser = new PIXI.Graphics();
-      otherUser.circle(0, 0, 20);
-      otherUser.fill(0x22c55e);
-      otherUser.x = 80;
-      otherUser.y = 80;
-      app.stage.addChild(otherUser);
+
 
       const statusText = new PIXI.Text({
         text: "DISCONNECTED",
@@ -81,18 +121,26 @@ export default function Canvas({ setIsConnected, latestMessage }) {
       let isConnected = false;
 
       const checkProximity = () => {
-        const dx = player.x - otherUser.x;
-        const dy = player.y - otherUser.y;
+        let connected = false;
 
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        Object.values(otherPlayersRef.current).forEach((otherPlayer) => {
+          const dx = player.x - otherPlayer.x;
+          const dy = player.y - otherPlayer.y;
 
-        if (distance < 80 && !isConnected) {
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 80) {
+            connected = true;
+          }
+        });
+
+        if (connected && !isConnected) {
           isConnected = true;
           setIsConnected(true);
           statusText.text = "CONNECTED";
         }
 
-        if (distance >= 80 && isConnected) {
+        if (!connected && isConnected) {
           isConnected = false;
           setIsConnected(false);
           statusText.text = "DISCONNECTED";
@@ -140,6 +188,11 @@ export default function Canvas({ setIsConnected, latestMessage }) {
           radiusZone.x = player.x;
           radiusZone.y = player.y;
           checkProximity();
+
+          socket.emit("playerMove", {
+            x: player.x,
+            y: player.y,
+          });
         }
 
         messageBubble.x = player.x - 80;

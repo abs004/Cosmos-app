@@ -1,10 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Canvas from "./components/Canvas";
 import ChatPanel from "./components/ChatPanel";
+import socket from "./services/socket";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [latestMessage, setLatestMessage] = useState("Move closer to chat");
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    socket.on("receiveMessage", (message) => {
+      setLatestMessage(message);
+      setMessages((prev) => [...prev, message]);
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, []);
 
   return (
     <div
@@ -28,6 +41,8 @@ export default function App() {
       <ChatPanel
         isConnected={isConnected}
         setLatestMessage={setLatestMessage}
+        messages={messages}
+        setMessages={setMessages}
       />
     </div>
   );

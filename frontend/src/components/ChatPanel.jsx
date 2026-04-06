@@ -1,8 +1,11 @@
 import { useState } from "react";
+import socket from "../services/socket";
 
 export default function ChatPanel({
   isConnected,
   setLatestMessage,
+  messages,
+  setMessages,
 }) {
   const [message, setMessage] = useState("");
 
@@ -11,7 +14,7 @@ export default function ChatPanel({
   const handleSend = () => {
     if (!message.trim()) return;
 
-    setLatestMessage(message);
+    socket.emit("sendMessage", message);
     setMessage("");
   };
 
@@ -25,9 +28,25 @@ export default function ChatPanel({
         padding: "20px",
         boxSizing: "border-box",
         borderLeft: "2px solid white",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <h2>Chat Room</h2>
+
+      <div
+        style={{
+          marginTop: "20px",
+          height: "420px",
+          border: "1px solid gray",
+          padding: "10px",
+          overflowY: "auto",
+        }}
+      >
+        {messages.map((msg, index) => (
+          <p key={index}>{msg}</p>
+        ))}
+      </div>
 
       <input
         type="text"
