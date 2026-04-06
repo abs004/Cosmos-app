@@ -105,7 +105,7 @@ export default function ChatPanel({
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="TYPE A MESSAGE..."
-          className="w-full bg-slate-950 border border-slate-800 text-white text-xs font-bold px-4 py-4 rounded-xl placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all uppercase tracking-tighter"
+          className="w-full bg-slate-950 border border-slate-800 text-white text-xs font-bold px-4 py-4 rounded-xl placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all tracking-tighter"
         />
 
         <button

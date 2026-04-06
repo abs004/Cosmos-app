@@ -12,7 +12,7 @@ Built as a full-stack real-time web application using React, PixiJS, Node.js, So
   Join the world in seconds with a fast, name-based onboarding process.
 
 * **Dice-Shuffle Avatar System**
-  Generate infinite unique pilots with a single click using our dynamic Dice Shuffle system. Powered by the `@dicebear/adventurer` library.
+  Generate infinite unique characters with a single click using our dynamic Dice Shuffle system. Powered by the `@dicebear/adventurer` library.
 
 * **Exit & Persistence**
   Safely leave the environment using the premium "Exit Cosmos" button. The backend ensures your state is cleaned up instantly for all other users.
@@ -54,11 +54,12 @@ Built as a full-stack real-time web application using React, PixiJS, Node.js, So
 ## ⚙️ How It Works
 
 1. **Onboarding**: Users shuffle for an avatar and enter a nickname on the Join Screen.
-2. **Session Creation**: The backend registers the user and broadcasts their entry via `playersUpdate`.
-3. **Movement**: Frontend listens for arrow keys/WASD and emits `playerMove`.
-4. **Proximity**: The `Canvas` calculates distances; if $<80px$, the "Press E to chat" prompt appears.
-5. **Messaging**: `sendMessage` payloads are routed through the server to specific targets or self-synchronized.
-6. **Cleanup**: Disconnecting or clicking "Exit" triggers a world-wide cleanup of that user's sprite.
+2. **Guidelines**: A dedicated interaction guide explains movement controls and communication shortcuts.
+3. **Session Creation**: The backend registers the user and broadcasts their entry via `playersUpdate`.
+4. **Movement**: Frontend listens for arrow keys/WASD and emits `playerMove`.
+5. **Proximity**: The `Canvas` calculates distances; if $<80px$, the "Press E to chat" prompt appears.
+6. **Messaging**: `sendMessage` payloads are routed through the server to specific targets or self-synchronized.
+7. **Cleanup**: Disconnecting or clicking "Exit" triggers a world-wide cleanup of that character's data.
 
 ---
 

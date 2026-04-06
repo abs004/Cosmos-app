@@ -3,13 +3,16 @@ import Canvas from "./components/Canvas";
 import ChatPanel from "./components/ChatPanel";
 import UserList from "./components/UserList";
 import JoinScreen from "./components/JoinScreen";
+import InstructionsScreen from "./components/InstructionsScreen";
 import socket from "./services/socket";
 import LoadingSpinner from "./components/LoadingSpinner";
 
 export default function App() {
   const [username, setUsername] = useState("");
   const [isJoined, setIsJoined] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [tmpJoinData, setTmpJoinData] = useState(null);
 
   const [partnerId, setPartnerId] = useState(null);
   const [latestMessage, setLatestMessage] = useState(null);
@@ -32,9 +35,18 @@ export default function App() {
     };
   }, []);
 
-  const handleJoin = (name, avatarSeed) => {
+  const handleJoinRequested = (name, avatarSeed) => {
+    setTmpJoinData({ name, avatarSeed });
+    setShowInstructions(true);
+  };
+
+  const handleStartCosmos = () => {
+    if (!tmpJoinData) return;
+    const { name, avatarSeed } = tmpJoinData;
+
     setUsername(name);
     setIsJoined(true);
+    setShowInstructions(false);
     setIsLoading(true);
 
     socket.emit("joinUser", {
@@ -46,14 +58,20 @@ export default function App() {
   const handleExit = () => {
     socket.emit("leaveUser");
     setIsJoined(false);
+    setShowInstructions(false);
     setUsername("");
     setPartnerId(null);
     setMessages([]);
     setIsLoading(false);
+    setTmpJoinData(null);
   };
 
-  if (!isJoined) {
-    return <JoinScreen onJoin={handleJoin} />;
+  if (!isJoined && !showInstructions) {
+    return <JoinScreen onJoin={handleJoinRequested} />;
+  }
+
+  if (showInstructions) {
+    return <InstructionsScreen onStart={handleStartCosmos} />;
   }
 
   return (

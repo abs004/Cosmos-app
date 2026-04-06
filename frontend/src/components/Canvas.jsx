@@ -146,13 +146,21 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
   }, [username]);
 
   useEffect(() => {
+    let app = null;
+    let destroyed = false;
+
     const setupCanvas = async () => {
-      const app = new PIXI.Application();
+      app = new PIXI.Application();
       await app.init({
         width: 800,
         height: 600,
         background: "#1a1622",
       });
+
+      if (destroyed) {
+        app.destroy(true, { children: true, texture: true });
+        return;
+      }
 
       appRef.current = app;
 
@@ -164,6 +172,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       const loadBackground = async () => {
         try {
           const bgTexture = await PIXI.Assets.load(bgImage);
+          if (destroyed) return;
           const bgSprite = new PIXI.Sprite(bgTexture);
           bgSprite.width = 800;
           bgSprite.height = 600;
@@ -273,15 +282,20 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       return () => {
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
-        app.destroy(true, { children: true, texture: true });
+        if (app) {
+          app.destroy(true, { children: true, texture: true });
+          appRef.current = null;
+        }
       };
     };
 
-    const cleanup = setupCanvas();
+    const promise = setupCanvas();
+
     return () => {
-      cleanup.then((destroyFn) => destroyFn && destroyFn());
+      destroyed = true;
+      promise.then((cleanupFn) => cleanupFn && cleanupFn());
     };
-  }, [setIsConnected, username]);
+  }, [setIsConnected]);
 
   useEffect(() => {
     if (!latestMessage) return;
