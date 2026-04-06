@@ -8,7 +8,6 @@ const mongoose = require("mongoose");
 const players = {};
 const messageTimeouts = {};
 
-// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000,
 })
@@ -17,7 +16,6 @@ mongoose.connect(process.env.MONGO_URI, {
         console.warn("MongoDB connection failed. Continuing in-memory mode.", err.message);
     });
 
-// User Schema
 const userSchema = new mongoose.Schema({
     username: String,
     socketId: String,
@@ -90,13 +88,20 @@ io.on("connection", (socket) => {
         const { text, targetId } = data;
         const msgPayload = { senderId: socket.id, targetId, text };
 
-        // Send to partner
         if (targetId) {
             io.to(targetId).emit("receiveMessage", msgPayload);
         }
 
-        // Send back to self
         socket.emit("receiveMessage", msgPayload);
+    });
+
+    socket.on("leaveUser", async () => {
+        const wasJoined = players[socket.id];
+        if (wasJoined) {
+            delete players[socket.id];
+            io.emit("playersUpdate", players);
+            console.log("User left room:", socket.id);
+        }
     });
 
     socket.on("disconnect", async () => {
@@ -123,8 +128,6 @@ io.on("connection", (socket) => {
         console.log("User disconnected:", socket.id);
     });
 });
-
-
 
 server.listen(5000, () => {
     console.log("Server running on port 5000");

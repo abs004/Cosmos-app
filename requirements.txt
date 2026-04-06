@@ -1,0 +1,18 @@
+# Cosmos Virtual Environment Requirements
+
+## Backend Dependencies (Node.js)
+cors
+dotenv
+express
+mongoose
+socket.io
+
+## Frontend Dependencies (React + PixiJS)
+react
+react-dom
+pixi.js
+socket.io-client
+tailwindcss
+@dicebear/core
+@dicebear/adventurer
+vite

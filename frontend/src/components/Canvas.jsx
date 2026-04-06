@@ -14,12 +14,10 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
     const app = appRef.current;
     if (!app) return;
 
-    // Check if local player exists now
     if (socket.id && playersData[socket.id]) {
       setIsLoading(false);
     }
 
-    // Remove disconnected players
     Object.keys(playerSpritesRef.current).forEach((id) => {
       if (!playersData[id]) {
         const playerObj = playerSpritesRef.current[id];
@@ -35,21 +33,17 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
     Object.entries(playersData).forEach(([id, position]) => {
       const isLocal = socket.id && id === socket.id;
 
-      // Create sprite/graphics if not exists
       if (!playerSpritesRef.current[id]) {
-        // Start with a fallback circle
         const sprite = new PIXI.Graphics();
         sprite.circle(0, 0, 20);
         sprite.fill(isLocal ? 0x3b82f6 : 0x22c55e);
 
         const avatarSeed = position.avatarSeed || position.name || "default";
 
-        // Generate local data URI
         const avatarUri = createAvatar(adventurer, {
           seed: avatarSeed,
         }).toDataUri();
 
-        // Async load avatar
         PIXI.Assets.load(avatarUri).then((texture) => {
           if (playerSpritesRef.current[id]) {
             const avatarSprite = new PIXI.Sprite(texture);
@@ -82,7 +76,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         });
         nameText.anchor.set(0.5, 0);
 
-        // ... rest of the creation logic ...
         const bubble = new PIXI.Graphics();
         bubble.roundRect(0, 0, 140, 35, 8);
         bubble.fill(0xffffff);
@@ -101,7 +94,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         radiusGraphics.circle(0, 0, 80);
         radiusGraphics.fill({ color: 0xffffff, alpha: 0.05 });
         radiusGraphics.stroke({ width: 1, color: 0xffffff, alpha: 0.1 });
-        app.stage.addChildAt(radiusGraphics, 1); // Above background, below players
+        app.stage.addChildAt(radiusGraphics, 1);
 
         app.stage.addChild(sprite);
         app.stage.addChild(nameText);
@@ -120,7 +113,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
 
       const playerObj = playerSpritesRef.current[id];
 
-      // Update position
       playerObj.sprite.x = position.x;
       playerObj.sprite.y = position.y;
       playerObj.radiusGraphics.x = position.x;
@@ -129,7 +121,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       playerObj.nameText.x = position.x;
       playerObj.nameText.y = position.y + 25;
 
-      // Update bubble position if visible
       playerObj.bubble.x = position.x - 70;
       playerObj.bubble.y = position.y - 60;
       playerObj.bubbleText.x = position.x - (playerObj.bubbleText.width / 2);
@@ -165,20 +156,18 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
 
       appRef.current = app;
 
-      // Ensure canvas is in DOM immediately so we don't have a blank screen during loading
       if (containerRef.current) {
         containerRef.current.innerHTML = "";
         containerRef.current.appendChild(app.canvas);
       }
 
-      // Load Background (Non-blocking)
       const loadBackground = async () => {
         try {
           const bgTexture = await PIXI.Assets.load(bgImage);
           const bgSprite = new PIXI.Sprite(bgTexture);
           bgSprite.width = 800;
           bgSprite.height = 600;
-          app.stage.addChildAt(bgSprite, 0); // Always at bottom
+          app.stage.addChildAt(bgSprite, 0);
         } catch (error) {
           console.error("Failed to load background image:", error);
         }
@@ -228,7 +217,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           closestPlayerId = null;
           promptText.visible = false;
 
-          // Auto-disconnect if we were connected and moved away
           if (isConnectedInternal) {
             isConnectedInternal = false;
             setIsConnected(false);
@@ -237,7 +225,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       };
 
       app.ticker.add(() => {
-        // Suppress movement if user is typing in any input field
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
         const local = playerSpritesRef.current[socket.id];
@@ -267,7 +254,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           local.nameText.x = local.sprite.x;
           local.nameText.y = local.sprite.y + 25;
 
-          // Update bubble position
           local.bubble.x = local.sprite.x - 70;
           local.bubble.y = local.sprite.y - 60;
           local.bubbleText.x = local.sprite.x - (local.bubbleText.width / 2);
@@ -277,11 +263,10 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           socket.emit("playerMove", { x: local.sprite.x, y: local.sprite.y });
         }
 
-        // Connection intent
         if ((keys["e"] || keys["E"]) && closestPlayerId && !isConnectedInternal) {
           isConnectedInternal = true;
           setIsConnected(closestPlayerId);
-          promptText.visible = false; // Hide prompt once connected
+          promptText.visible = false;
         }
       });
 
@@ -310,11 +295,9 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       playerObj.bubbleText.visible = true;
       playerObj.bubble.visible = true;
 
-      // Update bubble position
       playerObj.bubble.x = playerObj.sprite.x - 70;
       playerObj.bubble.y = playerObj.sprite.y - 60;
 
-      // Update bubble text position to center within the bubble
       playerObj.bubbleText.x = playerObj.sprite.x - (playerObj.bubbleText.width / 2);
       playerObj.bubbleText.y = playerObj.sprite.y - 50;
 

@@ -24,7 +24,6 @@ export default function JoinScreen({ onJoin }) {
           <p className="text-slate-400 text-[10px] font-bold tracking-[0.3em] uppercase">Connect to the Community</p>
         </div>
 
-        {/* Character Preview & Shuffle */}
         <div className="relative group flex flex-col items-center gap-4">
           <div className="w-32 h-32 rounded-full border-4 border-blue-500/30 overflow-hidden bg-slate-950 shadow-[0_0_50px_rgba(59,130,246,0.15)] transition-all duration-300 group-hover:scale-105 group-hover:border-blue-400/50 relative">
             <div
@@ -46,7 +45,6 @@ export default function JoinScreen({ onJoin }) {
           </button>
         </div>
 
-        {/* Input */}
         <div className="w-full space-y-4">
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Nickname</label>

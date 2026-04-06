@@ -11,13 +11,11 @@ export default function ChatPanel({
 
   if (!partnerId) return null;
 
-  // Filter messages for the current conversation thread
   const threadMessages = messages.filter(msg =>
     (msg.senderId === partnerId && (msg.targetId === socket.id || !msg.targetId)) ||
     (msg.senderId === socket.id && msg.targetId === partnerId)
   );
 
-  // Identify other active conversations
   const otherConversations = [...new Set(messages
     .filter(msg => msg.senderId !== socket.id && msg.senderId !== partnerId)
     .map(msg => msg.senderId)
@@ -37,7 +35,6 @@ export default function ChatPanel({
 
   return (
     <div className="w-80 h-[600px] bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl flex flex-col p-6 font-sans">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">Direct Message</span>
@@ -55,7 +52,6 @@ export default function ChatPanel({
         </button>
       </div>
 
-      {/* Thread Switcher */}
       {otherConversations.length > 0 && (
         <div className="mb-4 animate-in slide-in-from-top-2 duration-300">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Recent Chats</p>
@@ -74,7 +70,6 @@ export default function ChatPanel({
         </div>
       )}
 
-      {/* Message List */}
       <div className="flex-1 bg-slate-950/50 border border-slate-800/50 rounded-2xl p-4 overflow-y-auto space-y-4 no-scrollbar scroll-smooth">
         {threadMessages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
@@ -103,7 +98,6 @@ export default function ChatPanel({
         )}
       </div>
 
-      {/* Input Area */}
       <div className="mt-4 space-y-3">
         <input
           type="text"
