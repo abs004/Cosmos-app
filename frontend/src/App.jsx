@@ -33,13 +33,14 @@ export default function App() {
     };
   }, []);
 
-  const handleJoin = (name) => {
+  const handleJoin = (name, avatarSeed) => {
     setUsername(name);
     setIsJoined(true);
     setIsLoading(true);
 
     socket.emit("joinUser", {
       name,
+      avatarSeed,
     });
   };
 

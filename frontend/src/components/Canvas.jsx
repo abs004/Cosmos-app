@@ -1,6 +1,9 @@
 import { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
 import socket from "../services/socket";
+import bgImage from "../assets/background.jpg";
+import { createAvatar } from "@dicebear/core";
+import * as adventurer from "@dicebear/adventurer";
 
 export default function Canvas({ setIsConnected, latestMessage, username, players, setIsLoading }) {
   const containerRef = useRef(null);
@@ -31,11 +34,44 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
     Object.entries(playersData).forEach(([id, position]) => {
       const isLocal = socket.id && id === socket.id;
 
-      // Create sprite if not exists
+      // Create sprite/graphics if not exists
       if (!playerSpritesRef.current[id]) {
+        // Start with a fallback circle
         const sprite = new PIXI.Graphics();
         sprite.circle(0, 0, 20);
         sprite.fill(isLocal ? 0x3b82f6 : 0x22c55e);
+
+        if (position.avatarSeed) {
+          // Generate local data URI
+          const avatarUri = createAvatar(adventurer, {
+            seed: position.avatarSeed,
+          }).toDataUri();
+
+          // Async load avatar (from local URI, so very fast)
+          PIXI.Assets.load(avatarUri).then((texture) => {
+            // Check if player still exists
+            if (playerSpritesRef.current[id]) {
+              const avatarSprite = new PIXI.Sprite(texture);
+              avatarSprite.anchor.set(0.5);
+              avatarSprite.width = 60;
+              avatarSprite.height = 60;
+
+              // Replace the graphics with the sprite
+              const oldSprite = playerSpritesRef.current[id].sprite;
+              const parent = oldSprite.parent;
+              if (parent) {
+                const index = parent.getChildIndex(oldSprite);
+                parent.removeChild(oldSprite);
+                parent.addChildAt(avatarSprite, index);
+              }
+              playerSpritesRef.current[id].sprite = avatarSprite;
+
+              // Sync position immediately
+              avatarSprite.x = oldSprite.x;
+              avatarSprite.y = oldSprite.y;
+            }
+          }).catch(err => console.error("Avatar load failed:", err));
+        }
 
         const nameText = new PIXI.Text({
           text: position.name || "User",
@@ -47,6 +83,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         });
         nameText.anchor.set(0.5, 0);
 
+        // ... rest of the creation logic ...
         const bubble = new PIXI.Graphics();
         bubble.roundRect(0, 0, 140, 35, 8);
         bubble.fill(0xffffff);
@@ -71,6 +108,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           nameText,
           bubble,
           bubbleText,
+          hasAvatar: !!position.avatar
         };
       }
 
@@ -123,6 +161,26 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       });
 
       appRef.current = app;
+
+      // Ensure canvas is in DOM immediately so we don't have a blank screen during loading
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+        containerRef.current.appendChild(app.canvas);
+      }
+
+      // Load Background (Non-blocking)
+      const loadBackground = async () => {
+        try {
+          const bgTexture = await PIXI.Assets.load(bgImage);
+          const bgSprite = new PIXI.Sprite(bgTexture);
+          bgSprite.width = 800;
+          bgSprite.height = 600;
+          app.stage.addChildAt(bgSprite, 0); // Always at bottom
+        } catch (error) {
+          console.error("Failed to load background image:", error);
+        }
+      };
+      loadBackground();
 
       const keys = {};
       const onKeyDown = (e) => (keys[e.key] = true);
@@ -194,11 +252,6 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           socket.emit("playerMove", { x: local.sprite.x, y: local.sprite.y });
         }
       });
-
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-        containerRef.current.appendChild(app.canvas);
-      }
 
       return () => {
         window.removeEventListener("keydown", onKeyDown);

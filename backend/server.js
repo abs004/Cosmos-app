@@ -21,6 +21,7 @@ mongoose.connect(process.env.MONGO_URI, {
 const userSchema = new mongoose.Schema({
     username: String,
     socketId: String,
+    avatar: String,
     x: Number,
     y: Number,
     lastSeen: { type: Date, default: Date.now }
@@ -110,16 +111,24 @@ io.on("connection", (socket) => {
         console.log("User disconnected:", socket.id);
     });
 
-    socket.on("joinUser", async ({ name }) => {
+    socket.on("joinUser", async (data) => {
+        const { name, avatarSeed } = data;
         const x = Math.floor(Math.random() * 700) + 50;
         const y = Math.floor(Math.random() * 500) + 50;
 
-        players[socket.id] = { name, x, y };
+        players[socket.id] = {
+            id: socket.id,
+            name: name || "User",
+            avatarSeed: avatarSeed || null,
+            x,
+            y,
+            message: "",
+        };
 
         try {
             await User.findOneAndUpdate(
                 { socketId: socket.id },
-                { username: name, x, y, lastSeen: new Date() },
+                { username: name, avatarSeed, x, y, lastSeen: new Date() },
                 { upsert: true }
             );
         } catch (err) {
