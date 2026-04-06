@@ -49,31 +49,12 @@ export default function App() {
   }
 
   return (
-    <div
-      style={{
-        margin: 0,
-        padding: 0,
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#d1d5db",
-        overflow: "hidden",
-      }}
-    >
+    <div className="w-full h-full flex flex-col justify-center items-center bg-slate-900 overflow-hidden relative">
       {isLoading && <LoadingSpinner />}
 
-      <div style={{ position: "relative" }}>
+      <div className="relative">
         {/* Left Panel: Online Users */}
-        <div
-          style={{
-            position: "absolute",
-            right: "calc(100% + 2px)",
-            top: 0,
-            zIndex: 10,
-          }}
-        >
+        <div className="absolute right-[calc(100%+8px)] top-0 z-10">
           <UserList players={players} />
         </div>
 
@@ -86,14 +67,7 @@ export default function App() {
         />
 
         {/* Right Panel: Chat Room */}
-        <div
-          style={{
-            position: "absolute",
-            left: "calc(100% + 2px)",
-            top: 0,
-            zIndex: 10,
-          }}
-        >
+        <div className="absolute left-[calc(100%+8px)] top-0 z-10 h-full">
           <ChatPanel
             partnerId={partnerId}
             setPartnerId={setPartnerId}

@@ -1,43 +1,23 @@
 export default function LoadingSpinner() {
     return (
-        <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "#111827",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 1000,
-                color: "white",
-                fontFamily: "'Inter', sans-serif",
-            }}
-        >
-            <div
-                style={{
-                    width: "50px",
-                    height: "50px",
-                    border: "5px solid rgba(255, 255, 255, 0.1)",
-                    borderTop: "5px solid #3b82f6",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                    marginBottom: "20px",
-                }}
-            />
-            <p style={{ fontSize: "1.2rem", fontWeight: "500", letterSpacing: "1px" }}>
-                INITIALIZING COSMOS...
-            </p>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md font-sans">
+            <div className="relative w-24 h-24">
+                {/* Outer Ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-slate-800" />
+                {/* Spinner Ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+                {/* Inner Pulsing Core */}
+                <div className="absolute inset-4 rounded-full bg-blue-500/10 animate-pulse flex items-center justify-center border border-blue-500/20">
+                    <svg className="w-6 h-6 text-blue-500 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+            </div>
 
-            <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+            <div className="mt-8 text-center space-y-2">
+                <h3 className="text-white font-black uppercase tracking-[0.3em] text-sm italic">Loading</h3>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">Connecting to server...</p>
+            </div>
         </div>
     );
 }

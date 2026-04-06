@@ -42,37 +42,35 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         sprite.circle(0, 0, 20);
         sprite.fill(isLocal ? 0x3b82f6 : 0x22c55e);
 
-        if (position.avatarSeed) {
-          // Generate local data URI
-          const avatarUri = createAvatar(adventurer, {
-            seed: position.avatarSeed,
-          }).toDataUri();
+        const avatarSeed = position.avatarSeed || position.name || "default";
 
-          // Async load avatar (from local URI, so very fast)
-          PIXI.Assets.load(avatarUri).then((texture) => {
-            // Check if player still exists
-            if (playerSpritesRef.current[id]) {
-              const avatarSprite = new PIXI.Sprite(texture);
-              avatarSprite.anchor.set(0.5);
-              avatarSprite.width = 60;
-              avatarSprite.height = 60;
+        // Generate local data URI
+        const avatarUri = createAvatar(adventurer, {
+          seed: avatarSeed,
+        }).toDataUri();
 
-              // Replace the graphics with the sprite
-              const oldSprite = playerSpritesRef.current[id].sprite;
-              const parent = oldSprite.parent;
-              if (parent) {
-                const index = parent.getChildIndex(oldSprite);
-                parent.removeChild(oldSprite);
-                parent.addChildAt(avatarSprite, index);
-              }
-              playerSpritesRef.current[id].sprite = avatarSprite;
+        // Async load avatar
+        PIXI.Assets.load(avatarUri).then((texture) => {
+          if (playerSpritesRef.current[id]) {
+            const avatarSprite = new PIXI.Sprite(texture);
+            avatarSprite.anchor.set(0.5);
+            avatarSprite.width = 60;
+            avatarSprite.height = 60;
 
-              // Sync position immediately
-              avatarSprite.x = oldSprite.x;
-              avatarSprite.y = oldSprite.y;
+            const oldSprite = playerSpritesRef.current[id].sprite;
+            const parent = oldSprite.parent;
+            if (parent) {
+              const index = parent.getChildIndex(oldSprite);
+              parent.removeChild(oldSprite);
+              parent.addChildAt(avatarSprite, index);
             }
-          }).catch(err => console.error("Avatar load failed:", err));
-        }
+            playerSpritesRef.current[id].sprite = avatarSprite;
+            playerSpritesRef.current[id].hasAvatar = true;
+
+            avatarSprite.x = oldSprite.x;
+            avatarSprite.y = oldSprite.y;
+          }
+        }).catch(err => console.error("Avatar load failed:", err));
 
         const nameText = new PIXI.Text({
           text: position.name || "User",
@@ -188,8 +186,8 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       window.addEventListener("keyup", onKeyUp);
 
       const statusText = new PIXI.Text({
-        text: "DISCONNECTED",
-        style: { fill: "white", fontSize: 16 },
+        text: "",
+        style: { fill: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "sans-serif" },
       });
       statusText.x = 10;
       statusText.y = 10;
@@ -331,8 +329,8 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       style={{
         width: "800px",
         height: "600px",
-        border: "2px solid white",
-        boxSizing: "border-box",
+        borderRadius: "12px",
+        overflow: "hidden",
       }}
     ></div>
   );

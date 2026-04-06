@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    @apply bg-slate-900;
+  }
+}
+
+/* Custom interactions or extra global styles */
+.glass-panel {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl;
+}
