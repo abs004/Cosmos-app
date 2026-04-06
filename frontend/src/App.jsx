@@ -96,6 +96,7 @@ export default function App() {
         >
           <ChatPanel
             isConnected={isConnected}
+            setIsConnected={setIsConnected}
             messages={messages}
             setMessages={setMessages}
           />

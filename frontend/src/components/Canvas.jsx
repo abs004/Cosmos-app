@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
 import socket from "../services/socket";
-import bgImage from "../assets/background.jpg";
+import bgImage from "../assets/bkground.jpg";
 import { createAvatar } from "@dicebear/core";
 import * as adventurer from "@dicebear/adventurer";
 
@@ -24,6 +24,7 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       if (!playersData[id]) {
         const playerObj = playerSpritesRef.current[id];
         app.stage.removeChild(playerObj.sprite);
+        app.stage.removeChild(playerObj.radiusGraphics);
         app.stage.removeChild(playerObj.nameText);
         app.stage.removeChild(playerObj.bubble);
         app.stage.removeChild(playerObj.bubbleText);
@@ -98,6 +99,12 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         });
         bubbleText.visible = false;
 
+        const radiusGraphics = new PIXI.Graphics();
+        radiusGraphics.circle(0, 0, 80);
+        radiusGraphics.fill({ color: 0xffffff, alpha: 0.05 });
+        radiusGraphics.stroke({ width: 1, color: 0xffffff, alpha: 0.1 });
+        app.stage.addChildAt(radiusGraphics, 1); // Above background, below players
+
         app.stage.addChild(sprite);
         app.stage.addChild(nameText);
         app.stage.addChild(bubble);
@@ -105,10 +112,11 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
 
         playerSpritesRef.current[id] = {
           sprite,
+          radiusGraphics,
           nameText,
           bubble,
           bubbleText,
-          hasAvatar: !!position.avatar
+          hasAvatar: !!position.avatarSeed
         };
       }
 
@@ -117,6 +125,8 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       // Update position
       playerObj.sprite.x = position.x;
       playerObj.sprite.y = position.y;
+      playerObj.radiusGraphics.x = position.x;
+      playerObj.radiusGraphics.y = position.y;
       playerObj.nameText.text = position.name || "User";
       playerObj.nameText.x = position.x;
       playerObj.nameText.y = position.y + 25;
@@ -127,8 +137,13 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
         playerObj.bubbleText.visible = true;
         playerObj.bubble.x = position.x - 70;
         playerObj.bubble.y = position.y - 60;
-        playerObj.bubbleText.text = position.message;
-        playerObj.bubbleText.x = position.x - 55;
+
+        const displayMsg = position.message.length > 20
+          ? position.message.substring(0, 17) + "..."
+          : position.message;
+
+        playerObj.bubbleText.text = displayMsg;
+        playerObj.bubbleText.x = position.x - (playerObj.bubbleText.width / 2); // Center text
         playerObj.bubbleText.y = position.y - 50;
       }
     });
@@ -196,32 +211,56 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
       statusText.y = 10;
       app.stage.addChild(statusText);
 
+      const promptText = new PIXI.Text({
+        text: "",
+        style: { fill: "#fbbf24", fontSize: 18, fontWeight: "bold", stroke: "black", strokeThickness: 2 },
+      });
+      promptText.anchor.set(0.5);
+      promptText.visible = false;
+      app.stage.addChild(promptText);
+
       let isConnectedInternal = false;
+      let closestPlayerId = null;
 
       const checkProximity = (localPos) => {
-        let connected = false;
-        if (!localPos) return;
+        let nearest = null;
+        let minDistance = 80;
 
         Object.entries(playerSpritesRef.current).forEach(([id, otherPlayer]) => {
           if (id === socket.id) return;
           const dx = localPos.x - otherPlayer.sprite.x;
           const dy = localPos.y - otherPlayer.sprite.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 80) connected = true;
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearest = id;
+          }
         });
 
-        if (connected && !isConnectedInternal) {
-          isConnectedInternal = true;
-          setIsConnected(true);
-          statusText.text = "CONNECTED";
-        } else if (!connected && isConnectedInternal) {
-          isConnectedInternal = false;
-          setIsConnected(false);
-          statusText.text = "DISCONNECTED";
+        if (nearest && !isConnectedInternal) {
+          closestPlayerId = nearest;
+          const target = playerSpritesRef.current[nearest];
+          promptText.text = `Press E to chat with ${target.nameText.text}`;
+          promptText.x = localPos.x;
+          promptText.y = localPos.y - 60;
+          promptText.visible = true;
+        } else {
+          closestPlayerId = null;
+          promptText.visible = false;
+
+          // Auto-disconnect if we were connected and moved away
+          if (isConnectedInternal) {
+            isConnectedInternal = false;
+            setIsConnected(false);
+            statusText.text = "DISCONNECTED";
+          }
         }
       };
 
       app.ticker.add(() => {
+        // Suppress movement if user is typing in any input field
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
         const local = playerSpritesRef.current[socket.id];
         if (!local) return;
 
@@ -251,6 +290,14 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
           checkProximity({ x: local.sprite.x, y: local.sprite.y });
           socket.emit("playerMove", { x: local.sprite.x, y: local.sprite.y });
         }
+
+        // Connection intent
+        if ((keys["e"] || keys["E"]) && closestPlayerId && !isConnectedInternal) {
+          isConnectedInternal = true;
+          setIsConnected(true);
+          statusText.text = "CONNECTED";
+          promptText.visible = false; // Hide prompt once connected
+        }
       });
 
       return () => {
@@ -270,9 +317,17 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
     if (!latestMessage) return;
     const playerObj = playerSpritesRef.current[latestMessage.senderId];
     if (playerObj) {
-      playerObj.bubbleText.text = latestMessage.text;
+      const displayMsg = latestMessage.text.length > 20
+        ? latestMessage.text.substring(0, 17) + "..."
+        : latestMessage.text;
+
+      playerObj.bubbleText.text = displayMsg;
       playerObj.bubbleText.visible = true;
       playerObj.bubble.visible = true;
+
+      // Update bubble text position to center within the bubble
+      playerObj.bubbleText.x = playerObj.sprite.x - (playerObj.bubbleText.width / 2);
+
       const timeout = setTimeout(() => {
         playerObj.bubbleText.visible = false;
         playerObj.bubble.visible = false;

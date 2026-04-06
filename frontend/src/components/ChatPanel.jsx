@@ -3,6 +3,7 @@ import socket from "../services/socket";
 
 export default function ChatPanel({
   isConnected,
+  setIsConnected,
   setLatestMessage,
   messages,
   setMessages,
@@ -29,9 +30,25 @@ export default function ChatPanel({
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
       }}
     >
-      <h2>Chat Room</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <h2 style={{ margin: 0 }}>Chat Room</h2>
+        <button
+          onClick={() => setIsConnected(false)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#9ca3af",
+            fontSize: "20px",
+            cursor: "pointer",
+            padding: "5px",
+          }}
+        >
+          ✕
+        </button>
+      </div>
 
       <div
         style={{
