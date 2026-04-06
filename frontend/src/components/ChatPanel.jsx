@@ -27,7 +27,6 @@ export default function ChatPanel({
         color: "white",
         padding: "20px",
         boxSizing: "border-box",
-        borderLeft: "2px solid white",
         display: "flex",
         flexDirection: "column",
       }}
