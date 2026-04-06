@@ -7,38 +7,90 @@ export default function Canvas({ setIsConnected, latestMessage }) {
   const bubbleTextRef = useRef(null);
   const otherPlayersRef = useRef({});
   const appRef = useRef(null);
+  const latestPlayersRef = useRef({});
+  const messageBubbleRef = useRef(null);
 
   useEffect(() => {
     const handlePlayersUpdate = (players) => {
+      latestPlayersRef.current = players;
       const app = appRef.current;
       if (!app) return;
 
+      // Remove disconnected players
       Object.keys(otherPlayersRef.current).forEach((id) => {
         if (!players[id]) {
-          app.stage.removeChild(otherPlayersRef.current[id]);
+          const playerObj = otherPlayersRef.current[id];
+          app.stage.removeChild(playerObj.sprite);
+          app.stage.removeChild(playerObj.bubble);
+          app.stage.removeChild(playerObj.bubbleText);
           delete otherPlayersRef.current[id];
         }
       });
 
       Object.entries(players).forEach(([id, position]) => {
-        if (id === socket.id) return;
+        // Use a persistent socket ID from the connection if possible,
+        // or check against the current socket.id directly.
+        if (socket.id && id === socket.id) return;
 
+        // Create player if not exists
         if (!otherPlayersRef.current[id]) {
-          const otherPlayer = new PIXI.Graphics();
-          otherPlayer.circle(0, 0, 20);
-          otherPlayer.fill(0x22c55e);
+          const sprite = new PIXI.Graphics();
+          sprite.circle(0, 0, 20);
+          sprite.fill(0x22c55e);
 
-          otherPlayersRef.current[id] = otherPlayer;
-          app.stage.addChild(otherPlayer);
+          const bubble = new PIXI.Graphics();
+          bubble.roundRect(0, 0, 140, 35, 8);
+          bubble.fill(0xffffff);
+          bubble.visible = false;
+
+          const bubbleText = new PIXI.Text({
+            text: "",
+            style: {
+              fill: "black",
+              fontSize: 12,
+            },
+          });
+          bubbleText.visible = false;
+
+          app.stage.addChild(sprite);
+          app.stage.addChild(bubble);
+          app.stage.addChild(bubbleText);
+
+          otherPlayersRef.current[id] = {
+            sprite,
+            bubble,
+            bubbleText,
+          };
         }
 
-        otherPlayersRef.current[id].x = position.x;
-        otherPlayersRef.current[id].y = position.y;
+        const playerObj = otherPlayersRef.current[id];
+
+        // Move player
+        playerObj.sprite.x = position.x;
+        playerObj.sprite.y = position.y;
+
+        // Move bubble with player
+        if (position.message) {
+          playerObj.bubble.visible = true;
+          playerObj.bubbleText.visible = true;
+
+          playerObj.bubble.x = position.x - 70;
+          playerObj.bubble.y = position.y - 60;
+
+          playerObj.bubbleText.text = position.message;
+          playerObj.bubbleText.x = position.x - 55;
+          playerObj.bubbleText.y = position.y - 50;
+        } else {
+          playerObj.bubble.visible = false;
+          playerObj.bubbleText.visible = false;
+        }
       });
     };
 
     socket.on("connect", () => {
       console.log("Socket connected:", socket.id);
+      // Ensure we trigger a move update on connect to tell the server our initial pos
+      socket.emit("playerMove", { x: 400, y: 300 });
     });
 
     socket.on("playersUpdate", handlePlayersUpdate);
@@ -60,6 +112,13 @@ export default function Canvas({ setIsConnected, latestMessage }) {
 
       appRef.current = app;
 
+      // Apply initial state if already received
+      if (latestPlayersRef.current) {
+        // We trigger an update manually because handlePlayersUpdate might have returned early
+        // since appRef.current was null before this line.
+        socket.emit("playerMove", { x: 400, y: 300 });
+      }
+
       const player = new PIXI.Graphics();
       player.circle(0, 0, 20);
       player.fill(0x3b82f6);
@@ -71,11 +130,12 @@ export default function Canvas({ setIsConnected, latestMessage }) {
       messageBubble.fill(0xffffff);
       messageBubble.x = player.x - 80;
       messageBubble.y = player.y - 70;
+      messageBubble.visible = false; // Hide by default
 
       app.stage.addChild(messageBubble);
 
       const bubbleText = new PIXI.Text({
-        text: latestMessage,
+        text: "",
         style: {
           fill: "black",
           fontSize: 14,
@@ -84,8 +144,10 @@ export default function Canvas({ setIsConnected, latestMessage }) {
 
       bubbleText.x = messageBubble.x + 15;
       bubbleText.y = messageBubble.y + 10;
+      bubbleText.visible = false; // Hide by default
 
       bubbleTextRef.current = bubbleText;
+      messageBubbleRef.current = messageBubble;
 
       app.stage.addChild(bubbleText);
 
@@ -103,8 +165,6 @@ export default function Canvas({ setIsConnected, latestMessage }) {
       app.stage.addChild(radiusZone);
       app.stage.addChild(player);
 
-
-
       const statusText = new PIXI.Text({
         text: "DISCONNECTED",
         style: {
@@ -118,14 +178,15 @@ export default function Canvas({ setIsConnected, latestMessage }) {
 
       app.stage.addChild(statusText);
 
-      let isConnected = false;
+      let isConnectedInternal = false;
 
       const checkProximity = () => {
         let connected = false;
 
         Object.values(otherPlayersRef.current).forEach((otherPlayer) => {
-          const dx = player.x - otherPlayer.x;
-          const dy = player.y - otherPlayer.y;
+          // Fix: otherPlayer is a wrapper object, we need to access the sprite's position
+          const dx = player.x - otherPlayer.sprite.x;
+          const dy = player.y - otherPlayer.sprite.y;
 
           const distance = Math.sqrt(dx * dx + dy * dy);
 
@@ -134,14 +195,14 @@ export default function Canvas({ setIsConnected, latestMessage }) {
           }
         });
 
-        if (connected && !isConnected) {
-          isConnected = true;
+        if (connected && !isConnectedInternal) {
+          isConnectedInternal = true;
           setIsConnected(true);
           statusText.text = "CONNECTED";
         }
 
-        if (!connected && isConnected) {
-          isConnected = false;
+        if (!connected && isConnectedInternal) {
+          isConnectedInternal = false;
           setIsConnected(false);
           statusText.text = "DISCONNECTED";
         }
@@ -223,12 +284,24 @@ export default function Canvas({ setIsConnected, latestMessage }) {
     };
   }, [setIsConnected]);
 
+
   useEffect(() => {
-    if (bubbleTextRef.current) {
-      bubbleTextRef.current.text = latestMessage;
+    if (!bubbleTextRef.current || !messageBubbleRef.current || !latestMessage) return;
+
+    if (latestMessage.senderId === socket.id) {
+      bubbleTextRef.current.text = latestMessage.text;
+      bubbleTextRef.current.visible = true;
+      messageBubbleRef.current.visible = true;
+
+      // Optional: hide after 5 seconds
+      const timeout = setTimeout(() => {
+        bubbleTextRef.current.visible = false;
+        messageBubbleRef.current.visible = false;
+      }, 5000);
+
+      return () => clearTimeout(timeout);
     }
   }, [latestMessage]);
-
   return (
     <div
       ref={containerRef}

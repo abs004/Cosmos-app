@@ -44,7 +44,15 @@ export default function ChatPanel({
         }}
       >
         {messages.map((msg, index) => (
-          <p key={index}>{msg}</p>
+          <p
+            key={index}
+            style={{
+              textAlign: msg.senderId === socket.id ? "right" : "left",
+              margin: "8px 0",
+            }}
+          >
+            {msg.senderId === socket.id ? "You" : "Other"}: {msg.text}
+          </p>
         ))}
       </div>
 

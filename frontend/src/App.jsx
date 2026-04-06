@@ -5,13 +5,13 @@ import socket from "./services/socket";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
-  const [latestMessage, setLatestMessage] = useState("Move closer to chat");
+  const [latestMessage, setLatestMessage] = useState(null);
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    socket.on("receiveMessage", (message) => {
-      setLatestMessage(message);
-      setMessages((prev) => [...prev, message]);
+    socket.on("receiveMessage", (messageData) => {
+      setLatestMessage(messageData);
+      setMessages((prev) => [...prev, messageData]);
     });
 
     return () => {
