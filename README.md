@@ -92,7 +92,7 @@ PORT=5000
 
 ---
 
-## 🔮 Roadmap
+## 🔮 Future Improvements
 - [ ] P2P Encrypted Messaging
 - [ ] Private Room Channels
 - [ ] Emoji Reacts & emotes
