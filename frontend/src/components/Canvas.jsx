@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
 import socket from "../services/socket";
 
-export default function Canvas({ setIsConnected, latestMessage, username, players }) {
+export default function Canvas({ setIsConnected, latestMessage, username, players, setIsLoading }) {
   const containerRef = useRef(null);
   const playerSpritesRef = useRef({});
   const appRef = useRef(null);
@@ -10,6 +10,11 @@ export default function Canvas({ setIsConnected, latestMessage, username, player
   const handlePlayersUpdate = (playersData) => {
     const app = appRef.current;
     if (!app) return;
+
+    // Check if local player exists now
+    if (socket.id && playersData[socket.id]) {
+      setIsLoading(false);
+    }
 
     // Remove disconnected players
     Object.keys(playerSpritesRef.current).forEach((id) => {

@@ -5,9 +5,12 @@ import UserList from "./components/UserList";
 import JoinScreen from "./components/JoinScreen";
 import socket from "./services/socket";
 
+import LoadingSpinner from "./components/LoadingSpinner";
+
 export default function App() {
   const [username, setUsername] = useState("");
   const [isJoined, setIsJoined] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isConnected, setIsConnected] = useState(false);
   const [latestMessage, setLatestMessage] = useState(null);
@@ -33,6 +36,7 @@ export default function App() {
   const handleJoin = (name) => {
     setUsername(name);
     setIsJoined(true);
+    setIsLoading(true);
 
     socket.emit("joinUser", {
       name,
@@ -57,6 +61,8 @@ export default function App() {
         overflow: "hidden",
       }}
     >
+      {isLoading && <LoadingSpinner />}
+
       <div style={{ position: "relative" }}>
         {/* Left Panel: Online Users */}
         <div
@@ -75,6 +81,7 @@ export default function App() {
           latestMessage={latestMessage}
           username={username}
           players={players}
+          setIsLoading={setIsLoading}
         />
 
         {/* Right Panel: Chat Room */}
