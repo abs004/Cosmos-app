@@ -4,6 +4,10 @@ A real-time multiplayer virtual interaction space where users can join with thei
 
 Built as a full-stack real-time web application using React, PixiJS, Node.js, Socket.IO, and MongoDB.
 
+![Cosmos App Screenshot](frontend/src/assets/Scrnst.png)
+
+🎬 **[Watch the Demo Video](https://youtu.be/_0cFtmKbqMk)**
+
 ---
 
 ## 🚀 Features
